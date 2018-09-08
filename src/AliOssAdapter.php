@@ -478,7 +478,7 @@ class AliOssAdapter extends AbstractAdapter
      */
     public function listContents($directory = '', $recursive = false)
     {
-        $dirObjects = $this->listDirObjects($directory, recursive);
+        $dirObjects = $this->listDirObjects($directory, $recursive);
         $contents   = $dirObjects["objects"];
 
         $result = array_map([$this, 'normalizeResponse'], $contents);

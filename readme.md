@@ -1,7 +1,7 @@
 # laravel-aliyun-oss
 Aliyun oss filesystem storage adapter for laravel 5. 
 
-## Inspired By
+## Adaptation By
 - [jacobcyl/Aliyun-oss-storage](https://github.com/jacobcyl/Aliyun-oss-storage) 
 
 ## Require
