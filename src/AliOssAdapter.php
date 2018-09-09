@@ -218,10 +218,14 @@ class AliOssAdapter extends AbstractAdapter
     }
 
     /**
+     * just object, folder not support
+     *
      * {@inheritdoc}
      */
     public function rename($path, $newpath)
     {
+        //folder rename should copy all to new folder and delete older
+        //$path = $this->getRealPath($path);
         if (!$this->copy($path, $newpath)) {
             return false;
         }
@@ -236,6 +240,14 @@ class AliOssAdapter extends AbstractAdapter
     {
         $object    = $this->applyPathPrefix($path);
         $newObject = $this->applyPathPrefix($newpath);
+
+        /*$object = $this->getRealPath($object);
+        $size   = $this->getSize($object);
+        //copy is folder, the target must be folder
+        if (!empty($size) && 0 == $size['size'] && substr($newObject, -1) != '/') {
+            $newObject = $newObject . '/';
+        }*/
+
         try {
             $this->client->copyObject($this->bucket, $object, $this->bucket, $newObject);
         } catch (OssException $e) {
@@ -381,6 +393,10 @@ class AliOssAdapter extends AbstractAdapter
      */
     public function createDir($dirname, Config $config)
     {
+        /*alioss a problem. eg if create folder 'test',the same to create folder 'test/',
+          but doesObjectExist is diff,the path must be test/ and test//
+        */
+        //$dirname = substr($dirname, -1) == '/' ? $dirname : ($dirname . '/');
         $object  = $this->applyPathPrefix($dirname);
         $options = $this->getOptionsFromConfig($config);
 
@@ -504,6 +520,7 @@ class AliOssAdapter extends AbstractAdapter
      */
     public function getMetadata($path)
     {
+        $path   = $this->getRealPath($path);
         $object = $this->applyPathPrefix($path);
 
         try {
@@ -521,8 +538,13 @@ class AliOssAdapter extends AbstractAdapter
      */
     public function getSize($path)
     {
-        $object         = $this->getMetadata($path);
-        $object['size'] = $object['content-length'];
+        $object = $this->getMetadata($path);
+        //file size is zero，set >0 values. It's floder when the size is zero.
+        if (substr($path, -1) !== '/' && 0 == $object['content-length']) {
+            $object['size'] = 1;
+        } else {
+            $object['size'] = $object['content-length'];
+        }
         return $object;
     }
 
@@ -695,5 +717,23 @@ class AliOssAdapter extends AbstractAdapter
             Log::error($fun . ": FAILED");
             Log::error($e->getMessage());
         }
+    }
+
+    private function getRealPath($path)
+    {
+        $object = $this->applyPathPrefix($path);
+
+        $result = $this->client->doesObjectExist($this->bucket, $object);
+        //If it is a folder and there is no '/'， try again after add '/'
+        if (false === $result) {
+            $newPath = $path . '/';
+            $object  = $this->applyPathPrefix($newPath);
+            $result  = $this->client->doesObjectExist($this->bucket, $object);
+            if ($result) {
+                return $newPath;
+            }
+        }
+
+        return $path;
     }
 }
