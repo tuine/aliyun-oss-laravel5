@@ -322,7 +322,7 @@ class AliOssAdapter extends AbstractAdapter
         $delimiter  = '/';
         $nextMarker = '';
         $maxkeys    = 1000;
-
+        $dirname    = $this->applyPathPrefix($dirname);
         //存储结果
         $result = [];
 
@@ -520,11 +520,12 @@ class AliOssAdapter extends AbstractAdapter
      */
     public function getMetadata($path)
     {
-        $path   = $this->getRealPath($path);
-        $object = $this->applyPathPrefix($path);
+        $path   = $this->applyPathPrefix($path);
+        $object = $this->getRealPath($path);
 
         try {
-            $objectMeta = $this->client->getObjectMeta($this->bucket, $object);
+            $objectMeta              = $this->client->getObjectMeta($this->bucket, $object);
+            $objectMeta['real_path'] = $object;
         } catch (OssException $e) {
             $this->logErr(__FUNCTION__, $e);
             return false;
@@ -540,7 +541,7 @@ class AliOssAdapter extends AbstractAdapter
     {
         $object = $this->getMetadata($path);
         //file size is zero，set >0 values. It's floder when the size is zero.
-        if (substr($path, -1) !== '/' && 0 == $object['content-length']) {
+        if (substr($object['real_path'], -1) !== '/' && 0 == $object['content-length']) {
             $object['size'] = 1;
         } else {
             $object['size'] = $object['content-length'];
@@ -604,6 +605,7 @@ class AliOssAdapter extends AbstractAdapter
         if (!$this->has($path)) {
             throw new FileNotFoundException($path . ' not found');
         }
+        $path = $this->applyPathPrefix($path);
         return ($this->ssl ? 'https://' : 'http://') . ($this->isCname ? ($this->cdnDomain == '' ? $this->endPoint : $this->cdnDomain) : $this->bucket . '.' . $this->endPoint) . '/' . ltrim(
                 $path,
                 '/'
@@ -721,14 +723,11 @@ class AliOssAdapter extends AbstractAdapter
 
     private function getRealPath($path)
     {
-        $object = $this->applyPathPrefix($path);
-
-        $result = $this->client->doesObjectExist($this->bucket, $object);
+        $result = $this->client->doesObjectExist($this->bucket, $path);
         //If it is a folder and there is no '/'， try again after add '/'
         if (false === $result) {
             $newPath = $path . '/';
-            $object  = $this->applyPathPrefix($newPath);
-            $result  = $this->client->doesObjectExist($this->bucket, $object);
+            $result  = $this->client->doesObjectExist($this->bucket, $newPath);
             if ($result) {
                 return $newPath;
             }
