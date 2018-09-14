@@ -39,6 +39,7 @@ class AliOssServiceProvider extends ServiceProvider
             $isCname   = empty($config['isCName']) ? false : $config['isCName'];
             $debug     = empty($config['debug']) ? false : $config['debug'];
             $prefix    = empty($config['root']) ? null : $config['root'];
+            $timeout   = empty($config['timeout']) ? 600 : $config['timeout'];
 
             $endPoint   = $config['endpoint']; // 默认作为外部节点
             $epInternal = $isCname ? $cdnDomain : (empty($config['endpoint_internal']) ? $endPoint : $config['endpoint_internal']); // 内部节点
@@ -47,8 +48,10 @@ class AliOssServiceProvider extends ServiceProvider
                 Log::debug('OSS config:', $config);
             }
 
-            $client  = new OssClient($accessId, $accessKey, $epInternal, $isCname);
-            $adapter = new AliOssAdapter($client, $bucket, $endPoint, $ssl, $isCname, $debug, $cdnDomain, $prefix);
+            $client    = new OssClient($accessId, $accessKey, $epInternal, $isCname);
+            $bucketAcl = $client->getBucketAcl($bucket);
+            $adapter   = new AliOssAdapter($client, $bucket, $endPoint, $ssl, $isCname, $debug, $cdnDomain, $prefix, [],
+                $bucketAcl, $timeout);
 
             //Log::debug($client);
             $filesystem = new Filesystem($adapter);

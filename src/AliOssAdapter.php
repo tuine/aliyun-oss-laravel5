@@ -59,6 +59,9 @@ class AliOssAdapter extends AbstractAdapter
 
     protected $isCname;
 
+    protected $bucketAcl;
+
+    protected $timeout;
     //配置
     protected $options = [
         'Multipart' => 128
@@ -86,7 +89,9 @@ class AliOssAdapter extends AbstractAdapter
         $debug = false,
         $cdnDomain,
         $prefix = null,
-        array $options = []
+        array $options = [],
+        $bucketAcl = null,
+        $timeout = 600
     ) {
         $this->debug  = $debug;
         $this->client = $client;
@@ -97,6 +102,8 @@ class AliOssAdapter extends AbstractAdapter
         $this->isCname   = $isCname;
         $this->cdnDomain = $cdnDomain;
         $this->options   = array_merge($this->options, $options);
+        $this->bucketAcl = $bucketAcl;
+        $this->timeout   = $timeout;
     }
 
     /**
@@ -606,10 +613,14 @@ class AliOssAdapter extends AbstractAdapter
             throw new FileNotFoundException($path . ' not found');
         }
         $path = $this->applyPathPrefix($path);
-        return ($this->ssl ? 'https://' : 'http://') . ($this->isCname ? ($this->cdnDomain == '' ? $this->endPoint : $this->cdnDomain) : $this->bucket . '.' . $this->endPoint) . '/' . ltrim(
-                $path,
-                '/'
-            );
+        if ('private' == $this->bucketAcl) {
+            $signedUrl = $this->client->signUrl($this->bucket, $path, $this->timeout);
+            return $signedUrl;
+        } else {
+            return ($this->ssl ? 'https://' : 'http://') . ($this->isCname ?
+                    ($this->cdnDomain == '' ? $this->endPoint : $this->cdnDomain)
+                    : $this->bucket . '.' . $this->endPoint) . '/' . ltrim($path, '/');
+        }
     }
 
     /**
