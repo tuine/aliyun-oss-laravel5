@@ -614,7 +614,8 @@ class AliOssAdapter extends AbstractAdapter
         }
         $path = $this->applyPathPrefix($path);
         if ('private' == $this->bucketAcl) {
-            $signedUrl = $this->client->signUrl($this->bucket, $path, $this->timeout);
+            $extOption = (isset($this->extOption) && is_array($this->extOption)) ? $this->extOption: NULL;
+            $signedUrl = $this->client->signUrl($this->bucket, $path, $this->timeout, OssClient::OSS_HTTP_GET, $extOption);
             return $signedUrl;
         } else {
             return ($this->ssl ? 'https://' : 'http://') . ($this->isCname ?
