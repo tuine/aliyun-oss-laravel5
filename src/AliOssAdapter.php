@@ -55,8 +55,6 @@ class AliOssAdapter extends AbstractAdapter
 
     protected $cdnDomain;
 
-    protected $ssl;
-
     protected $isCname;
 
     protected $bucketAcl;
@@ -74,7 +72,6 @@ class AliOssAdapter extends AbstractAdapter
      * @param OssClient $client
      * @param string    $bucket
      * @param string    $endPoint
-     * @param bool      $ssl
      * @param bool      $isCname
      * @param bool      $debug
      * @param null      $prefix
@@ -84,7 +81,6 @@ class AliOssAdapter extends AbstractAdapter
         OssClient $client,
         $bucket,
         $endPoint,
-        $ssl,
         $isCname = false,
         $debug = false,
         $cdnDomain,
@@ -98,7 +94,6 @@ class AliOssAdapter extends AbstractAdapter
         $this->bucket = $bucket;
         $this->setPathPrefix($prefix);
         $this->endPoint  = $endPoint;
-        $this->ssl       = $ssl;
         $this->isCname   = $isCname;
         $this->cdnDomain = $cdnDomain;
         $this->options   = array_merge($this->options, $options);
@@ -618,8 +613,7 @@ class AliOssAdapter extends AbstractAdapter
             $signedUrl = $this->client->signUrl($this->bucket, $path, $this->timeout, OssClient::OSS_HTTP_GET, $extOption);
             return $signedUrl;
         } else {
-            return ($this->ssl ? 'https://' : 'http://') . ($this->isCname ?
-                    ($this->cdnDomain == '' ? $this->endPoint : $this->cdnDomain)
+            return ($this->isCname ? ($this->cdnDomain == '' ? $this->endPoint : $this->cdnDomain)
                     : $this->bucket . '.' . $this->endPoint) . '/' . ltrim($path, '/');
         }
     }

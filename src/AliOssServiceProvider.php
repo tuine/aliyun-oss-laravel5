@@ -35,7 +35,6 @@ class AliOssServiceProvider extends ServiceProvider
 
             $cdnDomain = empty($config['cdnDomain']) ? '' : $config['cdnDomain'];
             $bucket    = $config['bucket'];
-            $ssl       = empty($config['ssl']) ? false : $config['ssl'];
             $isCname   = empty($config['isCName']) ? false : $config['isCName'];
             $debug     = empty($config['debug']) ? false : $config['debug'];
             $prefix    = empty($config['root']) ? null : $config['root'];
@@ -50,7 +49,7 @@ class AliOssServiceProvider extends ServiceProvider
 
             $client    = new OssClient($accessId, $accessKey, $epInternal, $isCname);
             $bucketAcl = $client->getBucketAcl($bucket);
-            $adapter   = new AliOssAdapter($client, $bucket, $endPoint, $ssl, $isCname, $debug, $cdnDomain, $prefix, [],
+            $adapter   = new AliOssAdapter($client, $bucket, $endPoint, $isCname, $debug, $cdnDomain, $prefix, [],
                 $bucketAcl, $timeout);
 
             //Log::debug($client);
